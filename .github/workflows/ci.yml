@@ -45,6 +45,17 @@ jobs:
       - run: pip install build twine
       - run: python -m build
       - run: twine check --strict dist/*
+      - name: server.json matches the package version and the README marker
+        run: |
+          python - <<'PY'
+          import json, re, sys
+          v = re.search(r'"(.+)"', open("src/tmailor_mcp/_version.py").read()).group(1)
+          d = json.load(open("server.json"))
+          if {d["version"], d["packages"][0]["version"]} != {v}:
+              sys.exit(f"server.json versions differ from {v}")
+          if "mcp-name: " + d["name"] not in open("README.md").read():
+              sys.exit("README.md lacks the mcp-name marker")
+          PY
       - name: the wheel installs and the command starts
         run: |
           python -m venv /tmp/w && /tmp/w/bin/pip install dist/*.whl

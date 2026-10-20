@@ -1,5 +1,7 @@
 # tmailor-mcp
 
+<!-- mcp-name: io.github.tmailor-com/tmailor-mcp -->
+
 MCP server for the [Tmailor Open API](https://platform.tmailor.com/docs). It gives AI agents (Claude, Cursor,
 VS Code Copilot and any other MCP client) real, receive-only temporary email addresses: sign up somewhere, wait for
 the email, get the one-time code or the verification link.
@@ -70,6 +72,11 @@ Edit `claude_desktop_config.json` (Settings > Developer > Edit Config):
   }
 }
 ```
+
+### Other MCP clients
+
+`tmailor-mcp` is listed in the [MCP Registry](https://registry.modelcontextprotocol.io) as
+`io.github.tmailor-com/tmailor-mcp`, so clients that browse the registry can install it directly.
 
 ### Without uv
 

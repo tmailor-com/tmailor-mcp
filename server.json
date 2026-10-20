@@ -1,0 +1,32 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.tmailor-com/tmailor-mcp",
+  "title": "Tmailor temporary email",
+  "description": "Temporary email addresses for AI agents: create an inbox, wait for the email, get the OTP or link.",
+  "websiteUrl": "https://platform.tmailor.com/docs",
+  "repository": {
+    "url": "https://github.com/tmailor-com/tmailor-mcp",
+    "source": "github"
+  },
+  "version": "0.1.1",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "tmailor-mcp",
+      "version": "0.1.1",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "TMAILOR_API_KEY",
+          "description": "Tmailor Open API key (create one at https://platform.tmailor.com/keys)",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

@@ -23,6 +23,16 @@ jobs:
           if [ "v$version" != "$GITHUB_REF_NAME" ]; then
             echo "Tag $GITHUB_REF_NAME does not match src/tmailor_mcp/_version.py ($version)"; exit 1
           fi
+          python - "$version" <<'PY'
+          import json, sys
+          v = sys.argv[1]
+          d = json.load(open("server.json"))
+          bad = [x for x in [d["version"], d["packages"][0]["version"]] if x != v]
+          if bad:
+              sys.exit(f"server.json version(s) {bad} do not match {v}")
+          if "mcp-name: " + d["name"] not in open("README.md").read():
+              sys.exit("README.md lacks the mcp-name marker for " + d["name"])
+          PY
       - run: pip install -e ".[dev]" twine
       - run: pytest -q
       - run: python -m build
@@ -46,3 +56,28 @@ jobs:
           name: dist
           path: dist/
       - uses: pypa/gh-action-pypi-publish@release/v1
+
+  mcp-registry:
+    # Lists the new version in the official MCP Registry (io.github.tmailor-com/*) with GitHub OIDC: no secret.
+    # The registry checks the "mcp-name:" marker in the README of the PyPI release, so it runs after publish.
+    needs: publish
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write  # required for mcp-publisher login github-oidc
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install mcp-publisher (pinned)
+        run: |
+          curl -sSfL https://github.com/modelcontextprotocol/registry/releases/download/v1.8.1/mcp-publisher_linux_amd64.tar.gz | tar xz mcp-publisher
+          ./mcp-publisher --version
+      - name: Wait until PyPI serves this version
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          for i in $(seq 1 30); do
+            curl -sf "https://pypi.org/pypi/tmailor-mcp/$v/json" >/dev/null && exit 0
+            sleep 10
+          done
+          echo "tmailor-mcp $v is not on PyPI yet"; exit 1
+      - run: ./mcp-publisher login github-oidc
+      - run: ./mcp-publisher publish
