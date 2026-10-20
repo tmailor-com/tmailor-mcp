@@ -1,0 +1,68 @@
+[build-system]
+requires = ["hatchling>=1.18"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tmailor-mcp"
+dynamic = ["version"]
+description = "MCP server for the Tmailor Open API: temporary email addresses and OTP codes for AI agents."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "Tmailor" }]
+keywords = ["mcp", "model context protocol", "tmailor", "temp mail", "temporary email", "otp", "ai agent", "email testing"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Communications :: Email",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = ["mcp>=2.3,<3", "tmailor-sdk>=0.2.0,<1", "typing-extensions>=4.7"]
+
+[project.scripts]
+tmailor-mcp = "tmailor_mcp.__main__:main"
+
+[project.urls]
+Homepage = "https://platform.tmailor.com"
+Documentation = "https://platform.tmailor.com/docs"
+Source = "https://github.com/tmailor-com/tmailor-mcp"
+Support = "https://tmailor.com/contact-us"
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "pytest-asyncio>=0.21", "ruff>=0.5", "build"]
+
+[tool.hatch.version]
+path = "src/tmailor_mcp/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tmailor_mcp"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/tmailor_mcp", "tests", "README.md", "CHANGELOG.md", "LICENSE", "pyproject.toml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-p no:cacheprovider"
+
+[tool.ruff]
+line-length = 130
+target-version = "py310"
+src = ["src", "tests"]
+cache-dir = "/tmp/ruff-cache-tmailor-mcp"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
+ignore = ["UP006", "UP007", "UP035", "UP045"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106"]

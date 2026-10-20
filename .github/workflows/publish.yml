@@ -1,0 +1,48 @@
+name: Publish to PyPI
+
+# Runs when a version tag such as v0.1.0 is pushed. PyPI Trusted Publishing (OIDC) is configured for
+# repository tmailor-com/tmailor-mcp, workflow publish.yml, environment pypi: no API token is stored.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Tag matches the package version
+        run: |
+          version=$(python -c "import re; print(re.search(r'\"(.+)\"', open('src/tmailor_mcp/_version.py').read()).group(1))")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match src/tmailor_mcp/_version.py ($version)"; exit 1
+          fi
+      - run: pip install -e ".[dev]" twine
+      - run: pytest -q
+      - run: python -m build
+      - run: twine check --strict dist/*
+      - uses: actions/upload-artifact@v5
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: pypi
+      url: https://pypi.org/project/tmailor-mcp/
+    permissions:
+      id-token: write  # required for Trusted Publishing
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
