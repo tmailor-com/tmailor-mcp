@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 (2026-10-21)
+
+- `read_message` and `wait_for_message` take `body_format`: `text` (default, unchanged), `html` (the raw HTML as
+  received, up to `max_html_chars`, default 100000, at most 500000) or `both`. Every message now has `has_html`.
+  `html` on a message without an HTML part returns the text plus a `note`, so no body is lost.
+
 ## 0.2.0 (2026-10-21)
 
 - The 8 tools moved to `tmailor_mcp.tools` and run on a per-call `Session` (shared by the stdio server and the hosted

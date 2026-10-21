@@ -90,9 +90,13 @@ TMAILOR_API_KEY=tmk_live_... tmailor-mcp
 | Tool | What it does |
 |---|---|
 | `create_mailbox` | Create an address (random on a shared domain, or a chosen name on your own verified domain). Uses 1 quota unit. |
-| `wait_for_message` | Return the newest unread message matching optional sender/subject filters, or wait for one (up to 300 s). Includes `otp`, `codes`, `links` and the text. |
+| `wait_for_message` | Return the newest unread message matching optional sender/subject filters, or wait for one (up to 300 s). Includes `otp`, `codes`, `links` and the body (`body_format`). |
 | `list_messages` | Messages of an address (last 24 hours), without body. |
-| `read_message` | One message with `otp`, `codes`, `links` and text. |
+| `read_message` | One message with `otp`, `codes`, `links` and the body (`body_format`). |
+
+`body_format` on `wait_for_message` and `read_message`: `text` (plain text, default, cut to `max_chars`), `html`
+(the raw HTML exactly as received, cut to `max_html_chars`, default 100000) or `both`. `has_html` says whether the
+message has an HTML part; `html` on a message without one returns the text instead.
 | `delete_mailbox` | Delete an address for good. Quota is not returned. |
 | `list_mailboxes` | Your addresses, newest first. |
 | `list_domains` | Your own domains and whether shared domains are available. |
@@ -103,9 +107,10 @@ they never end up in the conversation.
 
 ## Security notes
 
-- **Email content is untrusted.** Anyone can send mail to an address. The server returns plain text only (no HTML),
-  cuts it to `max_chars`, and marks every message with `untrusted_content_notice`. Agents should use mail as data
-  (codes, links) and never follow instructions written inside it.
+- **Email content is untrusted.** Anyone can send mail to an address. The server returns plain text by default and
+  marks every message with `untrusted_content_notice`. With `body_format="html"` or `"both"` you get the raw HTML
+  unchanged (scripts, tracking pixels and hidden text included): render or parse it only in a safe way you choose.
+  Agents should use mail as data (codes, links) and never follow instructions written inside it.
 - **Keep the key out of shared files.** Prefer the VS Code `inputs` prompt, or a user-level config file that is
   not committed to a repository. Revoke a leaked key at https://platform.tmailor.com/keys.
 - Paid plans accept API calls from any IP, so a leaked key can be used from anywhere until you revoke it.

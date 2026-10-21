@@ -43,6 +43,7 @@ class FakeAPI:
         seen: bool = False,
         otp: Any = None,
         received_at: Any = None,
+        html: Any = None,
     ) -> str:
         self.n += 1
         mid = f"{self.n:032d}"
@@ -57,6 +58,7 @@ class FakeAPI:
                 "expires_at": int(time.time()) + 86400,
                 "seen": seen,
                 "_text": text,
+                "_html": html,
                 "_otp": otp,
             },
         )
@@ -159,7 +161,7 @@ class FakeAPI:
             out.update(
                 {
                     "text": m["_text"],
-                    "html": None,
+                    "html": m["_html"],
                     "body_available": True,
                     "otp": m["_otp"],
                     "codes": [m["_otp"]] if m["_otp"] else [],
@@ -261,6 +263,53 @@ async def test_list_read_delete_flow(server, api: FakeAPI) -> None:
     assert not err and out == {"deleted": True, "email": "c@shared.example"}
     err, out = await call(server, "list_messages", {"email": "c@shared.example"})
     assert err and "not an address of this Tmailor account" in out
+
+
+async def test_body_format_text_html_both(server, api: FakeAPI) -> None:
+    api.add_box("h@shared.example")
+    html = '<html><body><p>Hi</p><a href="https://shop.example/x">Go</a><img src="https://cdn.example/a.png"></body></html>'
+    mid = api.add_msg("h@shared.example", "Rich", "Hi Go", html=html)
+    plain = api.add_msg("h@shared.example", "Plain", "only text")
+
+    err, out = await call(server, "read_message", {"email": "h@shared.example", "message_id": mid})
+    m = out["message"]
+    assert not err and m["has_html"] is True and m["text"] == "Hi Go" and "html" not in m
+
+    err, out = await call(server, "read_message", {"email": "h@shared.example", "message_id": mid, "body_format": "html"})
+    m = out["message"]
+    assert not err and m["html"] == html and m["html_truncated"] is False and "text" not in m
+
+    err, out = await call(
+        server,
+        "read_message",
+        {"email": "h@shared.example", "message_id": mid, "body_format": "both", "max_html_chars": 1000},
+    )
+    m = out["message"]
+    assert not err and m["text"] == "Hi Go" and m["html"] == html
+
+    big = "<p>" + "B" * 3000 + "</p>"
+    bid = api.add_msg("h@shared.example", "Big", "B", html=big)
+    err, out = await call(
+        server, "read_message", {"email": "h@shared.example", "message_id": bid, "body_format": "html", "max_html_chars": 1000}
+    )
+    m = out["message"]
+    assert not err and len(m["html"]) == 1000 and m["html_truncated"] is True
+
+    # no HTML part: "html" falls back to the text so the body is never lost
+    err, out = await call(server, "read_message", {"email": "h@shared.example", "message_id": plain, "body_format": "html"})
+    m = out["message"]
+    assert not err and m["has_html"] is False and m["text"] == "only text" and "html" not in m and "no HTML part" in m["note"]
+
+    err, out = await call(server, "read_message", {"email": "h@shared.example", "message_id": mid, "body_format": "pdf"})
+    assert err
+
+
+async def test_wait_body_format_html(server, api: FakeAPI) -> None:
+    api.add_box("w@shared.example")
+    api.add_msg("w@shared.example", "Code", "Code 778899", html="<b>Code 778899</b>", otp="778899")
+    err, out = await call(server, "wait_for_message", {"email": "w@shared.example", "timeout_seconds": 5, "body_format": "both"})
+    m = out["message"]
+    assert not err and m["otp"] == "778899" and m["html"] == "<b>Code 778899</b>" and m["text"] == "Code 778899"
 
 
 async def test_unknown_and_invalid_email(server, api: FakeAPI) -> None:
