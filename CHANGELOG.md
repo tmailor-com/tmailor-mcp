@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1 (2026-10-21)
+
+- The stdio server adds `tmailor-mcp/<version> (stdio)` to the User-Agent of its API calls, so Tmailor can count
+  local MCP use apart from direct SDK use (no change for you; no data about you or your mail is added).
+
 ## 0.3.0 (2026-10-21)
 
 - `read_message` and `wait_for_message` take `body_format`: `text` (default, unchanged), `html` (the raw HTML as

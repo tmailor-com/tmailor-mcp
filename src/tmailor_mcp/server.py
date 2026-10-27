@@ -12,6 +12,7 @@ import time
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Awaitable, Callable, Dict, Optional
 
+import httpx
 import tmailor
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
@@ -119,9 +120,33 @@ class LocalSession:
             await self._client.aclose()
 
 
+USER_AGENT_TAG = f"tmailor-mcp/{__version__} (stdio)"
+
+
+async def _tag_user_agent(request: httpx.Request) -> None:
+    """Append this server to the SDK's User-Agent, so the Open API can count local MCP use apart from plain SDK use."""
+    ua = request.headers.get("User-Agent", "")
+    if USER_AGENT_TAG not in ua:
+        request.headers["User-Agent"] = f"{ua} {USER_AGENT_TAG}".strip()
+
+
+def default_client() -> AsyncClient:
+    """SDK client (key from ``TMAILOR_API_KEY``) whose User-Agent also names tmailor-mcp."""
+    http = httpx.AsyncClient(follow_redirects=False, event_hooks={"request": [_tag_user_agent]})
+    client = AsyncClient(http_client=http)
+    orig = client.aclose
+
+    async def aclose() -> None:  # the SDK does not close an http_client it was given
+        await orig()
+        await http.aclose()
+
+    client.aclose = aclose  # type: ignore[method-assign]
+    return client
+
+
 def build_server(client_factory: Optional[Callable[[], AsyncClient]] = None) -> MCPServer:
     """Build the stdio MCP server. ``client_factory`` is for tests; by default the key comes from ``TMAILOR_API_KEY``."""
-    session = LocalSession(client_factory or (lambda: AsyncClient()))
+    session = LocalSession(client_factory or default_client)
     mcp = MCPServer(
         "tmailor",
         title="Tmailor temporary email",
@@ -137,4 +162,4 @@ def build_server(client_factory: Optional[Callable[[], AsyncClient]] = None) -> 
     return mcp
 
 
-__all__ = ["LocalSession", "__version__", "build_server"]
+__all__ = ["LocalSession", "__version__", "build_server", "default_client"]

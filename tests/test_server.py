@@ -450,3 +450,13 @@ async def test_wait_deadline_covers_token_lookup(api: FakeAPI) -> None:
     err, out = await call(srv, "wait_for_message", {"email": "n@shared.example", "timeout_seconds": 2})
     assert not err and out["status"] == "timeout"
     assert time.monotonic() - t0 < 4
+
+
+async def test_default_client_tags_user_agent() -> None:
+    from tmailor_mcp.server import USER_AGENT_TAG, _tag_user_agent
+
+    req = httpx.Request("GET", "https://open-api.tmailor.com/v1/me", headers={"User-Agent": "tmailor-python/0.2.1 (python 3.12)"})
+    await _tag_user_agent(req)
+    await _tag_user_agent(req)  # retries resend the same request: tag only once
+    assert req.headers["User-Agent"] == f"tmailor-python/0.2.1 (python 3.12) {USER_AGENT_TAG}"
+    assert USER_AGENT_TAG.startswith("tmailor-mcp/") and USER_AGENT_TAG.endswith("(stdio)")
