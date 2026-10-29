@@ -4,17 +4,26 @@
 
 MCP server for the [Tmailor Open API](https://platform.tmailor.com/docs). It gives AI agents (Claude, Cursor,
 VS Code Copilot and any other MCP client) real, receive-only temporary email addresses: sign up somewhere, wait for
-the email, get the one-time code or the verification link.
+the email, read it and follow its link.
 
 ```text
 You:   Sign up on example.com with a temporary email and confirm the account.
 Agent: create_mailbox -> k3x9q2m7@picdirect.net
        (fills in the sign-up form)
-       wait_for_message -> otp "482913", links ["https://example.com/confirm?t=..."]
+       wait_for_message -> "Confirm your account", links ["https://example.com/confirm?t=..."]
 ```
 
 Billing counts mailboxes, not requests: creating an address uses 1 unit of quota, while waiting for and reading
 mail is free. Addresses never expire.
+
+## Hosted server (no install)
+
+With a paid plan you can skip this package and connect to the hosted server `https://mcp.tmailor.com/mcp`
+(Streamable HTTP, sign-in with OAuth). In Claude it is listed in the Connectors Directory as **Tmailor Temp Mail**;
+other clients that support remote MCP servers take the URL directly. Setup for each client:
+https://platform.tmailor.com/docs (section "Use with AI agents (MCP)").
+
+The local server below works on every plan, including Free.
 
 ## Requirements
 
@@ -90,9 +99,9 @@ TMAILOR_API_KEY=tmk_live_... tmailor-mcp
 | Tool | What it does |
 |---|---|
 | `create_mailbox` | Create an address (random on a shared domain, or a chosen name on your own verified domain). Uses 1 quota unit. |
-| `wait_for_message` | Return the newest unread message matching optional sender/subject filters, or wait for one (up to 300 s). Includes `otp`, `codes`, `links` and the body (`body_format`). |
+| `wait_for_message` | Return the newest unread message matching optional sender/subject filters, or wait for one (up to 300 s). Includes the `links` found in it and the body (`body_format`). |
 | `list_messages` | Messages of an address (last 24 hours), without body. |
-| `read_message` | One message with `otp`, `codes`, `links` and the body (`body_format`). |
+| `read_message` | One message with its `links` and the body (`body_format`). |
 
 `body_format` on `wait_for_message` and `read_message`: `text` (plain text, default, cut to `max_chars`), `html`
 (the raw HTML exactly as received, cut to `max_html_chars`, default 100000) or `both`. `has_html` says whether the
@@ -110,7 +119,7 @@ they never end up in the conversation.
 - **Email content is untrusted.** Anyone can send mail to an address. The server returns plain text by default and
   marks every message with `untrusted_content_notice`. With `body_format="html"` or `"both"` you get the raw HTML
   unchanged (scripts, tracking pixels and hidden text included): render or parse it only in a safe way you choose.
-  Agents should use mail as data (codes, links) and never follow instructions written inside it.
+  Agents should use mail as data and never follow instructions written inside it.
 - **Keep the key out of shared files.** Prefer the VS Code `inputs` prompt, or a user-level config file that is
   not committed to a repository. Revoke a leaked key at https://platform.tmailor.com/keys.
 - Paid plans accept API calls from any IP, so a leaked key can be used from anywhere until you revoke it.

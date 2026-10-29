@@ -1,4 +1,4 @@
-"""MCP server for the Tmailor Open API: temporary email addresses and OTP codes for AI agents."""
+"""MCP server for the Tmailor Open API: receive-only temporary email addresses for AI agents."""
 
 from ._version import __version__
 from .server import build_server

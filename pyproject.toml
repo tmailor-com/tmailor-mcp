@@ -5,13 +5,13 @@ build-backend = "hatchling.build"
 [project]
 name = "tmailor-mcp"
 dynamic = ["version"]
-description = "MCP server for the Tmailor Open API: temporary email addresses and OTP codes for AI agents."
+description = "MCP server for the Tmailor Open API: receive-only temporary email addresses for AI agents."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.10"
 authors = [{ name = "Tmailor" }]
-keywords = ["mcp", "model context protocol", "tmailor", "temp mail", "temporary email", "otp", "ai agent", "email testing"]
+keywords = ["mcp", "model context protocol", "tmailor", "temp mail", "temporary email", "disposable email", "ai agent", "email testing"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
